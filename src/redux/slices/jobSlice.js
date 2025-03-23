@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import { apijob } from "../api/api_job";
+import { apijob } from "../api/api_jobs";
 
 const initialState = {
   jobs: [],
@@ -55,21 +55,14 @@ const jobSlice = createSlice({
   },
    extraReducers: (builder) => {
     builder.addMatcher(
-      apijob.endpoints.search_job.matchFulfilled, // Lắng nghe API đang xử lý
+      apijob.endpoints.fetchJobs.matchFulfilled,
       (state, action) => {
-        console.log("kiểm tra action.payload tai seach_job: ", action);
-        state.jobs = action.payload.jobs; // Cập nhật danh sách jobs
-        state.paging.totalPages = action.payload.totalPages;
-        state.paging.active_page = 1;
-      }); 
-      builder.addMatcher(
-        apijob.endpoints.get_all_job.matchFulfilled, // Lắng nghe API đang xử lý
-        (state, action) => {
-          console.log("kiểm tra action.payload tai get_all_job: ", action);
-          state.jobs = action.payload.jobs; // Cập nhật danh sách jobs
-          state.paging.totalPages = action.payload.totalPages;
-          state.paging.active_page = 1;
-        });
+        console.log("Fetched jobs data:", action);
+        state.jobs = action.payload.jobs;
+        state.paging.totalPages = action.payload.totalPages || 1;
+        state.paging.totalItems = action.payload.totalItems || 0;
+      }
+    );
     },
 });
 

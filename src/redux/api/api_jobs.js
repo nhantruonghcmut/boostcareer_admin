@@ -4,28 +4,30 @@ import { baseApi } from "./api__base";
 
 export const apijob = baseApi.injectEndpoints({
   endpoints: (builder) => ({
-    get_all_job: builder.query({
-      query: () => `/api/job/get_all_job`,
-      method: 'GET',      
-      transformResponse: (response) => {console.log("thu được từ get_all_job : ",response);  return response}, // kiểm soát: console dữ liệu từ backend
-
-    }),
-    search_job: builder.mutation({
-      query: ({searchData, paging}) => ({
-        url: `/api/job/search`,
-        method: 'POST',
-        body: {searchData,paging} , // Thêm tham số truyền vào cho query
-      }),
+    fetchJobs: builder.query({
+      query: (params = {}) => {
+        console.log("Query params received:", params); // Log để kiểm tra
+        const { searchData, paging } = params;
+        if (!params.searchData || (Object.values(params.searchData).every(val => val === "")
+        && Object.values(params.paging).every(val => val === null || val === "")))  {
+          return {
+            url: `/api/job/get_all_job`,
+            method: 'GET'
+          };
+        } 
+        
+        // Ngược lại, gọi search endpoint với searchData và paging
+        return {
+          url: `/api/job/search`,
+          method: 'POST',
+          body: { searchData, paging }
+        };
+      },
+      serializeQueryArgs: ({ queryArgs }) => {
+        return JSON.stringify(queryArgs);},
       providesTags: ["SearchedJobs"], // Tag để đánh dấu cho quản lý endpoint
       transformResponse: (response) => {console.log("thu được từ search_job : ",response);  return response}, // kiểm soát: console dữ liệu từ backend
     }),
-    delete_job: builder.mutation({
-      query:(job_id) => ({
-        url: `/api/job/deletejob/${job_id}`,
-        method: 'DELETE',
-      }),      
-      invalidatesTags: ["SearchedJobs"], // Thêm invalidatesTags để tự động cập nhật sau khi xóa
-    }), 
     delete_jobs: builder.mutation({
       query: (job_ids) => ({
         url: `/api/job/deletejobs`,
@@ -43,14 +45,15 @@ export const apijob = baseApi.injectEndpoints({
       invalidatesTags: ["SearchedJobs"], // Tag để đánh dấu cho quản lý endpoint
     }),   
     update_status_: builder.mutation({
-      query: (status_,job_ids) => ({
+      query: ({ status_, job_ids }) =>  {
+        console.log("update_status", status_, job_ids);
+        return {
         url: `/api/job/update_status_`,
         method: 'POST',
-        body: {status_,job_ids},
-      }),
+        body: {status_,job_ids},}},
       invalidatesTags: ["SearchedJobs"], // Tag để đánh dấu cho quản lý endpoint
     }),         
   }),
 });
 
-export const { useGet_all_jobQuery,useSearch_jobMutation,useDelete_jobMutation,useDelete_jobsMutation,useUpdate_jobMutation, useUpdate_status_Mutation} = apijob; // Đảm bảo export đúng tên
+export const { useFetchJobsQuery,useDelete_jobsMutation,useUpdate_jobMutation, useUpdate_status_Mutation} = apijob; // Đảm bảo export đúng tên

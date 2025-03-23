@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { useGetCatalogIndustryQuery, useGetCatalogJobfunctionQuery, useGetCatalogcityQuery, useGetCatalogJoblevelQuery } from "../../redux/api/api_catalog";
-import { useSearch_jobMutation, useDelete_jobsMutation, useUpdate_jobMutation, useUpdate_status_Mutation, useGet_all_jobQuery } from "../../redux/api/api_job";
 import { CCol, CRow, CForm, } from "@coreui/react";
 import SelectField from "../../components/SelectField";
 import Combo2Input from "../../components/Combo2Input";
@@ -9,9 +8,11 @@ import Combo2date from "../../components/Combo2date";
 import Combo1Input from "../../components/Combo1Input";
 import SearchControlRow from "../../components/ComboSearchcontrol";
 import GenericTable from "../../components/GenericTable";
-import {config_employertable } from "./config_employertable"
-import { setjobs, setSearchData, resetSearchData, setPaging } from "../../redux/slices/jobSlice";
 import { Pagination } from "../../components/pagination";
+import {config_employertable } from "./config_employertable"
+import {  } from "../../redux/api/api_employers";
+import { } from "../../redux/slices/employerSlice";
+
 const employer = () => {
   const dispatch = useDispatch();
 

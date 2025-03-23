@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { useGetCatalogIndustryQuery, useGetCatalogJobfunctionQuery, useGetCatalogcityQuery, useGetCatalogJoblevelQuery } from "../../redux/api/api_catalog";
-import { useSearch_jobMutation, useDelete_jobsMutation, useUpdate_jobMutation, useUpdate_status_Mutation, useGet_all_jobQuery } from "../../redux/api/api_job";
+import { useFetchJobsQuery, useDelete_jobsMutation, useUpdate_jobMutation, useUpdate_status_Mutation} from "../../redux/api/api_jobs";
 import { CCol, CRow, CForm, } from "@coreui/react";
 import SelectField from "../../components/SelectField";
 import Combo2Input from "../../components/Combo2Input";
@@ -20,9 +20,22 @@ const Job = () => {
   useGetCatalogJobfunctionQuery();
   useGetCatalogcityQuery();
   useGetCatalogJoblevelQuery();
-
-  const getAllJobsQuery = useGet_all_jobQuery();
-  const [searchJob, searchJobResult] = useSearch_jobMutation();
+  ///// redux state
+  const { industries, jobfunctions, cities, joblevels, experiences, job_status } = useSelector((state) => state.catalog_state);
+  const { jobs } = useSelector((state) => state.Jobs_state);
+  const { paging, searchData } = useSelector((state) => state.Jobs_state);
+  
+  // Thêm một state local để lưu trữ query params
+  const [queryParams, setQueryParams] = useState({ searchData, paging });
+  
+  // Sử dụng queryParams thay vì trực tiếp searchData và paging
+  const { data: jobsData, refetch } = useFetchJobsQuery(  // Trích xuất refetch từ hook
+    queryParams,
+    { 
+      refetchOnMountOrArgChange: true,
+      skip: false 
+    }
+  );
   const [deleteJobs] = useDelete_jobsMutation();
   const [updateStatus] = useUpdate_status_Mutation();
 
@@ -43,52 +56,11 @@ const Job = () => {
     require_experience: "",
     status_: ""
   });
-
-  ///// redux state
-  const { paging, searchData } = useSelector((state) => state.Jobs_state);
-  const jobs = useSelector((state) => state.Jobs_state.jobs);
-  const { industries, jobfunctions, cities, joblevels, experiences, job_status } = useSelector((state) => state.catalog_state);
-  
-  //// config table
-  const config = useConfigJobtable(action_delete, setAction_delete);
-
- //// useEffect
+//// config table
+  const config = useConfigJobtable(refetch);
   useEffect(() => {
-    if (getAllJobsQuery.data && getAllJobsQuery.data.jobs) {
-      dispatch(setjobs(getAllJobsQuery.data.jobs));
-      dispatch(setPaging({
-        totalPages: getAllJobsQuery.data.totalPages || 1,
-        totalItems: getAllJobsQuery.data.totalItems || 0
-      }));
-    }
-  }, [getAllJobsQuery.data, dispatch]);
-  useEffect(() => {
-    if (action_delete.isdeleting) {
-      // Refetch data after deletion
-      const fetchData = async () => {
-        try {
-          const result = await searchJob({
-            searchData: searchData,
-            paging: paging
-          });
-          if (result.data) {
-            dispatch(setjobs(result.data.jobs));
-            dispatch(setPaging({
-              totalPages: result.data.totalPages || 1,
-              totalItems: result.data.totalItems || 0
-            }));
-          }
-        } catch (error) {
-          console.error("Error fetching data after deletion:", error);
-        }
-      };
-
-      fetchData();
-      setAction_delete({ isdeleting: false });
-    }
-  }, [action_delete, searchJob, searchData, paging, dispatch]);
-
-
+    setQueryParams({ searchData, paging });
+  }, [searchData, paging]);
 
   const handleInputChange = (field, value) => {
     setLocal_searchData(prev => ({
@@ -97,118 +69,83 @@ const Job = () => {
     }));
   };
   const handleSearch = async () => {
-    const updated_searchData = { ...local_searchData, active_page: 1 };
-    dispatch(setSearchData(updated_searchData));
-    try {
-      console.log("searchData: ", updated_searchData);
-      const result = await searchJob({
+    // const updated_searchData = { ...local_searchData, active_page: 1 };
+    // const updatedPaging = { ...paging, active_page: 1 };
+    
+    // // Cập nhật Redux state
+    // dispatch(setSearchData(updated_searchData));
+    // dispatch(setPaging(updatedPaging));
+    
+    // // Cập nhật queryParams để trigger lại query
+    // setQueryParams({
+    //   searchData: updated_searchData,
+    //   paging: updatedPaging
+    // });
+    setLocal_searchData(currentSearchData => {
+      const updated_searchData = { ...currentSearchData, active_page: 1 };
+      const updatedPaging = { ...paging, active_page: 1 };
+      
+      // Cập nhật Redux và queryParams sau khi có giá trị mới nhất
+      dispatch(setSearchData(updated_searchData));
+      dispatch(setPaging(updatedPaging));
+      
+      setQueryParams({
         searchData: updated_searchData,
-        paging: { ...paging, active_page: 1 }
+        paging: updatedPaging
       });
-
-      if (result.data) {
-        dispatch(setjobs(result.data.jobs));
-        dispatch(setPaging({
-          totalPages: result.data.totalPages || 1,
-          totalItems: result.data.totalItems || 0,
-          active_page: 1
-        }));
-      }
-    } catch (error) {
-      console.error("Search error:", error);
-    }
+      
+      return updated_searchData; // Cập nhật local_searchData
+    });
   };
   const handle_Multidelete = async () => {
     if (selectedRows.length > 0) {
       try {
         await deleteJobs({ job_ids: selectedRows });
         setSelectedRows([]);
-
-        // Refresh the data after deletion
-        const result = await searchJob({
-          searchData: searchData,
-          paging: paging
-        });
-
-        if (result.data) {
-          dispatch(setjobs(result.data.jobs));
-          dispatch(setPaging({
-            totalPages: result.data.totalPages || 1,
-            totalItems: result.data.totalItems || 0
-          }));
-        }
+        // Không cần refetch, invalidatesTags sẽ tự làm điều đó
       } catch (error) {
         console.error("Delete error:", error);
       }
     }
   };
+  
   const handle_update_status = async (status_) => {
     if (selectedRows.length > 0) {
       try {
-        const result = await updateStatus({
+        await updateStatus({
           'status_': status_,
           'job_ids': selectedRows
         });
-
-        if (result.data) {
-          setSelectedRows([]);
-
-          // Refresh the data after status update
-          const searchResult = await searchJob({
-            searchData: searchData,
-            paging: paging
-          });
-
-          if (searchResult.data) {
-            dispatch(setjobs(searchResult.data.jobs));
-            dispatch(setPaging({
-              totalPages: searchResult.data.totalPages || 1,
-              totalItems: searchResult.data.totalItems || 0
-            }));
-          }
-        }
+        setSelectedRows([]);
+        // Không cần refetch, invalidatesTags sẽ tự làm điều đó
       } catch (error) {
         console.error("Status update error:", error);
       }
     }
   };
-  const handle_change_active_page = async (newpage) => {
-    try {
-      const result = await searchJob({
-        searchData: searchData,
-        paging: { ...paging, active_page: newpage }
-      });
-
-      if (result.data) {
-        dispatch(setjobs(result.data.jobs));
-        dispatch(setPaging({
-          ...paging,
-          active_page: newpage
-        }));
-      }
-    } catch (error) {
-      console.error("Page change error:", error);
-    }
+  const handle_change_active_page = (newpage) => {
+    const updatedPaging = { ...paging, active_page: newpage };
+    
+    // Cập nhật Redux state
+    dispatch(setPaging(updatedPaging));
+    
+    // Cập nhật queryParams để trigger lại query
+    setQueryParams({
+      searchData: searchData,
+      paging: updatedPaging
+    });
   };
-  const handle_change_paging_size = async (newsize) => {
-    try {
-      const result = await searchJob({
-        searchData: searchData,
-        paging: { ...paging, paging_size: newsize, active_page: 1 }
-      });
-
-      if (result.data) {
-        dispatch(setjobs(result.data.jobs));
-        dispatch(setPaging({
-          ...paging,
-          paging_size: newsize,
-          active_page: 1,
-          totalPages: result.data.totalPages || 1
-        }));
-      }
-    } catch (error) {
-      console.error("Page size change error:", error);
-    }
+  const handle_change_paging_size = (newsize) => {
+    const updatedPaging = { ...paging, paging_size: newsize, active_page: 1 };
+    
+    // Cập nhật Redux state
+    dispatch(setPaging(updatedPaging));
+    
+    // Cập nhật queryParams để trigger lại query
+    setQueryParams({
+      searchData: searchData,
+      paging: updatedPaging
+    });
   };
 
   const handle_view = async () => {
