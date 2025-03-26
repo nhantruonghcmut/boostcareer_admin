@@ -1,7 +1,7 @@
 import React from 'react'
 import { CPagination, CPaginationItem } from '@coreui/react'
 
-export const Pagination = ({ activePage, totalPages, onPageChange, pagesize }) => {
+export const Pagination = ({ activePage, totalPages, onPageChange }) => {
   const renderPaginationItems = () => {
     const items = [];
     

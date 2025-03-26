@@ -1,6 +1,6 @@
 import React from "react";
 import { useSelector, useDispatch } from "react-redux";
-import { setjobs, setSearchData, resetSearchData, setPaging } from "../../redux/slices/jobSlice";
+import { setjobs } from "../../redux/slices/jobSlice";
 import { useUpdate_status_Mutation,useDelete_jobsMutation  } from "../../redux/api/api_jobs";
 
 const formatDate = (dateStr) => {
@@ -11,10 +11,9 @@ const formatDate = (dateStr) => {
   }).format(new Date(dateStr));
 };
 
-export const config_jobtable = () => {
+export const config_jobtable = (need_reload, setNeed_reload) => {
   const [deleteJobs] = useDelete_jobsMutation();
   const [updateStatus] = useUpdate_status_Mutation();
-  const { paging, searchData } = useSelector((state) => state.Jobs_state);
 
   const dispatch = useDispatch();
   const columns = [
@@ -77,8 +76,11 @@ export const config_jobtable = () => {
         label: "Xóa",
         color: "danger",
         onClick: async (item) => {
-          try {
-            await deleteJobs({ job_ids: [item.job_id] })
+          try {            
+            const result =await deleteJobs({ job_ids: [item.job_id] })
+            if (result.data) { 
+                setNeed_reload(true); // Cập nhật state để reload   
+                 }
             alert(`Xóa tin tuyển dụng: ${item.title} thành công`);
             // refetch(); // Gọi refetch trực tiếp
           }
@@ -94,20 +96,9 @@ export const config_jobtable = () => {
           try {
             const newStatus = item.status_ === 1 ? 0 : 1;
             const result = await updateStatus({ 'status_': newStatus, 'job_ids': [item.job_id] });
-            if (result.data) {
-              const searchResult = await searchJob({
-                searchData: searchData,
-                paging: paging
-              });
-
-              if (searchResult.data) {
-                dispatch(setjobs(searchResult.data.jobs));
-                dispatch(setPaging({
-                  totalPages: searchResult.data.totalPages || 1,
-                  totalItems: searchResult.data.totalItems || 0
-                }));
-              }
-            }
+            if (result.data) { 
+              setNeed_reload(true); // Cập nhật state để reload   
+                 }
           }
           catch (error) {
             console.log("Cập nhật trạng thái thất bại", error);
@@ -116,6 +107,6 @@ export const config_jobtable = () => {
       },]
   };
 };
-export const useConfigJobtable = () => {
-  return config_jobtable();
+export const useConfigJobtable = (need_reload, setNeed_reload) => {
+  return config_jobtable(need_reload, setNeed_reload);
 };

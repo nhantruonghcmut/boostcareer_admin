@@ -4,7 +4,6 @@ export const apiEmployers = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     fetchEmployers: builder.query({
       query: (params = {}) => {
-        console.log("Query params received:", params); // Log để kiểm tra
         const { searchData, paging } = params;
         if (!params.searchData || (Object.values(params.searchData).every(val => val === "")
         && Object.values(params.paging).every(val => val === null || val === "")))  {
@@ -13,26 +12,19 @@ export const apiEmployers = baseApi.injectEndpoints({
             method: 'GET'
           };
         } 
-        
-        // Ngược lại, gọi search endpoint với searchData và paging
         return {
           url: `/api/employer/search_employer`,
           method: 'POST',
           body: { searchData, paging }
         };
       },
-      serializeQueryArgs: ({ queryArgs }) => {
-        return JSON.stringify(queryArgs);},
-      providesTags: ["Employer"], // Tag để đánh dấu cho quản lý endpoint
-      transformResponse: (response) => {console.log("thu được từ fetchEmployer : ",response);  return response}, // kiểm soát: console dữ liệu từ backend
     }),
     delete_Employers: builder.mutation({
       query: (Employers_ids) => ({
-        url: `/api/employer/delete_employer`,
+        url: `/api/employer/delete_employers`,
         method: 'DELETE',
         body: Employers_ids,
       }),
-      invalidatesTags: ["Employer"], // Tag để đánh dấu cho quản lý endpoint
     }),
     update_Employers: builder.mutation({
       query: (Employers) => ({
@@ -40,24 +32,22 @@ export const apiEmployers = baseApi.injectEndpoints({
         method: 'PUT',
         body: Employers,
       }),
-      invalidatesTags: ["Employer"], // Tag để đánh dấu cho quản lý endpoint
     }),   
     update_status_Employers: builder.mutation({
-      query: ({ status_, Employers_ids }) =>  {
-        console.log("update_status", status_, Employers_ids);
+      query: ({ status_, employer_ids }) =>  {
+        console.log("update_status", status_, employer_ids);
         return {
         url: `/api/employer/update_status_`,
         method: 'POST',
-        body: {status_,Employers_ids},}},
-      invalidatesTags: ["Employer"], // Tag để đánh dấu cho quản lý endpoint
+        body: {status_,employer_ids}}},
     }),
-    send_message: builder.mutation({
+    send_message_employer: builder.mutation({
       query: (message) => ({
         url: `/api/employer/send_message`,
         method: 'POST',
         body: message,  })         
     }),
-    reset_Password: builder.mutation({
+    reset_Password_employer: builder.mutation({
       query: (employer_ids) => ({
         url: `/api/employer/reset_password`,
         method: 'POST',
@@ -71,6 +61,6 @@ export const {
   useDelete_EmployersMutation,
   useUpdate_EmployersMutation,
   useUpdate_status_EmployersMutation,
-  useSend_messageMutation,
-  useReset_PasswordMutation,
-  } = apiEmployers; // Đảm bảo export đúng tên
+  useSend_message_employerMutation,
+  useReset_Password_employerMutation
+  } = apiEmployers;

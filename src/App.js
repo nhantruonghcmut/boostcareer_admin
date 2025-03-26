@@ -1,19 +1,28 @@
 import React, { Suspense, useEffect } from 'react'
 import { HashRouter, Route, Routes } from 'react-router-dom'
 import { useSelector } from 'react-redux'
+import { useGetCatalogIndustryQuery, useGetCatalogJobfunctionQuery, useGetCatalogcityQuery, useGetCatalogJoblevelQuery,useGetCatalogScaleQuery } from  "./redux/api/api_catalog";
 
 import { CSpinner, useColorModes } from '@coreui/react'
 import './scss/style.scss'
 // We use those styles to show code examples, you should remove them in your application.
-import './scss/examples.scss'
+// import './scss/examples.scss'
 
 // Containers
 const DefaultLayout = React.lazy(() => import('./layout/DefaultLayout'))
 
-// Pages
+
 
 
 const App = () => {
+    ///////// get function and catalog
+    useGetCatalogIndustryQuery();
+    useGetCatalogJobfunctionQuery();
+    useGetCatalogcityQuery();
+    useGetCatalogJoblevelQuery();
+    useGetCatalogScaleQuery();
+
+
   const { isColorModeSet, setColorMode } = useColorModes('coreui-free-react-admin-template-theme')
   const storedTheme = useSelector((state) => state.ui.theme)
 

@@ -20,6 +20,7 @@ const SearchControlRow = ({
   setPageSize,
   onSearch,
   onChange, 
+  is_job=true,
   onstatus,
   onDelete,
   ...props
@@ -44,12 +45,12 @@ const SearchControlRow = ({
         </CCol>
         <CCol xs={1}>
           <CButton color="secondary" style={buttonStyle} onClick={() => onstatus(0)}>
-            Ẩn tin
+            {is_job? "Ẩn tin": "Khóa"}
           </CButton>
         </CCol>
         <CCol xs={1}>
           <CButton color="success" style={buttonStyle} onClick={() => onstatus(1)}>
-            Hiện tin
+          {is_job? "Hiện tin tin": "Mở khóa"}
           </CButton>
         </CCol>
 

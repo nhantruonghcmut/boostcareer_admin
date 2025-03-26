@@ -1,9 +1,10 @@
 import React from "react";
 import { 
-  useDelete_EmployersMutation,
-  useUpdate_status_EmployersMutation,
-  useSend_message_employerMutation,
-  useReset_Password_employerMutation } from '../../redux/api/api_employers'
+  useDelete_jobseekersMutation,
+  useUpdate_jobseekersMutation,
+  useUpdate_status_jobseekersMutation,
+  useSend_message_jobseekerMutation,
+  useReset_Password_jobseekerMutation,} from '../../redux/api/api_jobseeker'
 import { useDispatch } from "react-redux";
 import Modal_message from "../../components/Modal_message";
 const formatDate = (dateStr) => {
@@ -14,11 +15,11 @@ const formatDate = (dateStr) => {
   }).format(new Date(dateStr));
 };
 
-export const config_employertable = ( need_reload, setNeed_reload ) => {    
-  const [delete_employers] = useDelete_EmployersMutation();
-  const [update_employers_status] = useUpdate_status_EmployersMutation();
-  const [send_message] = useSend_message_employerMutation();
-  const [reset_Password] = useReset_Password_employerMutation();
+export const config_jobseekertable = ( need_reload, setNeed_reload ) => {    
+  const [delete_jobseekers] = useDelete_jobseekersMutation();
+  const [update_jobseekers_status] = useUpdate_status_jobseekersMutation();
+  const [send_message] = useSend_message_jobseekerMutation();
+  const [reset_Password] =   useReset_Password_jobseekerMutation();
 
   
   const [visible, setVisible] = React.useState(false);
@@ -37,13 +38,13 @@ export const config_employertable = ( need_reload, setNeed_reload ) => {
 
   const columns = [
       {
-        header: "employer_ID",
-        field: "employer_id",
-        render: (item) => <strong>{item.employer_id}</strong>
+        header: "jobseeker_ID",
+        field: "jobseeker_id",
+        render: (item) => <strong>{item.jobseeker_id}</strong>
       },
       {
-        header: "User Name",
-        field: "company_name",
+        header: "Họ và tên",
+        field: "full_name",
         render: (item) => (<strong>{item.company_name.length > 40 ? item.company_name.slice(0, 40) + "..." : item.company_name}</strong>)
       },
       {
@@ -53,12 +54,12 @@ export const config_employertable = ( need_reload, setNeed_reload ) => {
       },
       {
         header: "Địa chỉ",
-        field: "work_location",
+        field: "address",
         render: (item) => (item.work_location.length > 40 ? item.work_location.slice(0, 40) + "..." : item.work_location)
       },
       {
-        header: "Lĩnh vực",
-        field: "industry",
+        header: "Ngành nghề",
+        field: "job_function",
         render: (item) => (item.industry_name)
       },
       {
@@ -68,10 +69,10 @@ export const config_employertable = ( need_reload, setNeed_reload ) => {
       },
       {
         header: "Status",
-        field: "employer_status",
+        field: "jobseeker_status",
         render: (item) => (
-          <span className={`badge ${item.employer_status === 1 ? "bg-success" : "bg-secondary"}`}>
-            {item.employer_status === 1 ? "Active" : "InActive"}
+          <span className={`badge ${item.jobseeker_status === 1 ? "bg-success" : "bg-secondary"}`}>
+            {item.jobseeker_status === 1 ? "Active" : "InActive"}
           </span>
         )
       },       
@@ -89,7 +90,7 @@ actions : [
       color: "danger",
       onClick: async (item) => {
           try {            
-            const result =await delete_employers({ employer_ids: [item.employer_id] })
+            const result =await delete_jobseekers({ jobseeker_ids: [item.jobseeker_id] })
             // Cập nhật state để reload   
             if (result.data) { setNeed_reload(true); }
             alert(`Xóa tài khoản tuyển dụng: ${item.company_name} thành công`);
@@ -105,12 +106,12 @@ actions : [
       onClick: (item) => openMessageModal(),
     },
     {
-      label: (item) => (item.employer_status===1? "Khóa" : "Mở khóa"),
-      color: (item) => item.employer_status === 1 ? "dark" : "success",
+      label: (item) => (item.jobseeker_status===1? "Khóa" : "Mở khóa"),
+      color: (item) => item.jobseeker_status === 1 ? "dark" : "success",
       onClick: async (item) => {
         try {
-          const newStatus = item.employer_status === 1 ? 0 : 1;
-          const result = await update_employers_status({ 'status_': newStatus, 'employer_ids': [item.employer_id] });
+          const newStatus = item.jobseeker_status === 1 ? 0 : 1;
+          const result = await update_jobseekers_status({ 'status_': newStatus, 'jobseeker_ids': [item.jobseeker_id] });
           if (result.data) {  setNeed_reload(true); }
             }
         catch (error) 
@@ -122,7 +123,7 @@ actions : [
       color: "info",
       onClick: async (item) => {
         try {
-          const result =await reset_Password(item.employer_id);
+          const result =await reset_Password(item.jobseeker_id);
           if (result.data) {
               alert(`Reset mật khẩu cho: ${item.company_name} thành công`);
               setNeed_reload(true); // Cập nhật state để reload
@@ -137,5 +138,5 @@ actions : [
 }
 };
 
-export const useConfigemployertable = (need_reload, setNeed_reload) => {
-  return config_employertable(need_reload, setNeed_reload);};
+export const useConfigjobseekertable = (need_reload, setNeed_reload) => {
+  return config_jobseekertable(need_reload, setNeed_reload);};

@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { useSelector, useDispatch } from "react-redux";
-import { useGetCatalogIndustryQuery, useGetCatalogJobfunctionQuery, useGetCatalogcityQuery, useGetCatalogJoblevelQuery } from "../../redux/api/api_catalog";
-import { useFetchJobsQuery, useDelete_jobsMutation, useUpdate_jobMutation, useUpdate_status_Mutation} from "../../redux/api/api_jobs";
+import { useSelector,  } from "react-redux";
+import { useFetchJobsQuery, useDelete_jobsMutation, useUpdate_status_Mutation } from "../../redux/api/api_jobs";
 import { CCol, CRow, CForm, } from "@coreui/react";
 import SelectField from "../../components/SelectField";
 import Combo2Input from "../../components/Combo2Input";
@@ -10,39 +9,19 @@ import Combo1Input from "../../components/Combo1Input";
 import SearchControlRow from "../../components/ComboSearchcontrol";
 import GenericTable from "../../components/GenericTable";
 import { useConfigJobtable } from "./config_jobtable"
-import { setjobs, setSearchData, resetSearchData, setPaging } from "../../redux/slices/jobSlice";
 import { Pagination } from "../../components/pagination";
 const Job = () => {
-  const dispatch = useDispatch();
 
-  ///////// get function and catalog
-  useGetCatalogIndustryQuery();
-  useGetCatalogJobfunctionQuery();
-  useGetCatalogcityQuery();
-  useGetCatalogJoblevelQuery();
   ///// redux state
-  const { industries, jobfunctions, cities, joblevels, experiences, job_status } = useSelector((state) => state.catalog_state);
-  const { jobs } = useSelector((state) => state.Jobs_state);
-  const { paging, searchData } = useSelector((state) => state.Jobs_state);
-  
-  // Thêm một state local để lưu trữ query params
-  const [queryParams, setQueryParams] = useState({ searchData, paging });
-  
-  // Sử dụng queryParams thay vì trực tiếp searchData và paging
-  const { data: jobsData, refetch } = useFetchJobsQuery(  // Trích xuất refetch từ hook
-    queryParams,
-    { 
-      refetchOnMountOrArgChange: true,
-      skip: false 
-    }
-  );
+  const { industries, jobfunctions, cities, joblevels, experiences, object_status } = useSelector((state) => state.catalog_state);
   const [deleteJobs] = useDelete_jobsMutation();
-  const [updateStatus] = useUpdate_status_Mutation();
+  const [updateStatus_Job] = useUpdate_status_Mutation();
 
-  ///////// local state
+  // Thêm state local 
   const [selectedRows, setSelectedRows] = useState([]);
-  const [action_delete, setAction_delete] = useState({ isdeleting: false });
-  const [local_searchData, setLocal_searchData] = useState({
+  const {jobs} = useSelector((state) => state.Jobs_state);
+  const [need_reload, setNeed_reload] = useState(!jobs || jobs.length === 0);
+  const [searchData_job, setSearchData_job] = useState({
     title: "",
     industry: "",
     work_location: "",
@@ -56,102 +35,96 @@ const Job = () => {
     require_experience: "",
     status_: ""
   });
-//// config table
-  const config = useConfigJobtable(refetch);
-  useEffect(() => {
-    setQueryParams({ searchData, paging });
-  }, [searchData, paging]);
+  const [paging, setPaging] = useState({
+    active_page: 1,
+    paging_size: 10,
+    totalItems: 0,
+    totalPages: 1
+  });
+  // Sử dụng queryParams thay vì trực tiếp searchData và paging
+  const { data: res, refetch } = useFetchJobsQuery({
+    searchData: searchData_job,
+    paging,
+  },
+    { skip: !need_reload
+      ,refetchOnMountOrArgChange: false }
+  );
+
+
+  //// config table
+  const config = useConfigJobtable(need_reload, setNeed_reload);
+useEffect(() => {
+  if (need_reload) {
+    const fetchData = async () => {
+      try {
+          const result = await refetch();
+        if (result.data) {
+          setPaging(prev => ({...prev,totalPages: result.data.totalPages || 1 }));
+        }
+        setNeed_reload(false);
+      } catch (error) {
+        console.error("Error fetching data:", error);
+        setNeed_reload(false);
+      }
+    };
+    fetchData();
+  }
+}, [need_reload]);
 
   const handleInputChange = (field, value) => {
-    setLocal_searchData(prev => ({
+    setSearchData_job(prev => ({
       ...prev,
       [field]: value
     }));
   };
   const handleSearch = async () => {
-    // const updated_searchData = { ...local_searchData, active_page: 1 };
-    // const updatedPaging = { ...paging, active_page: 1 };
-    
-    // // Cập nhật Redux state
-    // dispatch(setSearchData(updated_searchData));
-    // dispatch(setPaging(updatedPaging));
-    
-    // // Cập nhật queryParams để trigger lại query
-    // setQueryParams({
-    //   searchData: updated_searchData,
-    //   paging: updatedPaging
-    // });
-    setLocal_searchData(currentSearchData => {
-      const updated_searchData = { ...currentSearchData, active_page: 1 };
-      const updatedPaging = { ...paging, active_page: 1 };
-      
-      // Cập nhật Redux và queryParams sau khi có giá trị mới nhất
-      dispatch(setSearchData(updated_searchData));
-      dispatch(setPaging(updatedPaging));
-      
-      setQueryParams({
-        searchData: updated_searchData,
-        paging: updatedPaging
-      });
-      
-      return updated_searchData; // Cập nhật local_searchData
-    });
-  };
+      setPaging((prev) => ({...prev, active_page: 1}));
+      setNeed_reload(true); // Cập nhật lại state need_reload để trigger refetch
+    };
+  
   const handle_Multidelete = async () => {
     if (selectedRows.length > 0) {
       try {
-        await deleteJobs({ job_ids: selectedRows });
+        const result = await deleteJobs({ job_ids: selectedRows });
+        if (result.data) {
         setSelectedRows([]);
-        // Không cần refetch, invalidatesTags sẽ tự làm điều đó
+        setNeed_reload(true);
+        }
       } catch (error) {
         console.error("Delete error:", error);
       }
     }
   };
-  
+
   const handle_update_status = async (status_) => {
     if (selectedRows.length > 0) {
       try {
-        await updateStatus({
+        await updateStatus_Job({
           'status_': status_,
           'job_ids': selectedRows
         });
         setSelectedRows([]);
-        // Không cần refetch, invalidatesTags sẽ tự làm điều đó
+        setNeed_reload(true);
       } catch (error) {
         console.error("Status update error:", error);
       }
     }
   };
   const handle_change_active_page = (newpage) => {
-    const updatedPaging = { ...paging, active_page: newpage };
-    
     // Cập nhật Redux state
-    dispatch(setPaging(updatedPaging));
+    setNeed_reload(true);
+    setPaging((prev) => ({ ...prev, active_page: newpage }));
+    console.log("set state new active page ", newpage);
     
-    // Cập nhật queryParams để trigger lại query
-    setQueryParams({
-      searchData: searchData,
-      paging: updatedPaging
-    });
   };
   const handle_change_paging_size = (newsize) => {
-    const updatedPaging = { ...paging, paging_size: newsize, active_page: 1 };
-    
     // Cập nhật Redux state
-    dispatch(setPaging(updatedPaging));
-    
-    // Cập nhật queryParams để trigger lại query
-    setQueryParams({
-      searchData: searchData,
-      paging: updatedPaging
-    });
+    setNeed_reload(true);
+    setPaging((prev) => ({ ...prev, paging_size: newsize })); 
+    console.log("set state new paging size ", newsize);
   };
 
-  const handle_view = async () => {
-
-  };
-
+ 
   return (
     <CForm onSubmit={(e) => { e.preventDefault(); handleSearch(); }}>
       <CRow>
@@ -175,7 +148,7 @@ const Job = () => {
             onChange={(value) => handleInputChange('level_id', value)} />
           <CRow>
             <CCol>
-              <SelectField class_name_="mb-2" header_2="Trạng thái" label={"Bất kỳ"} data={job_status} valueKey="id" labelKey="name"
+              <SelectField class_name_="mb-2" header_2="Trạng thái" label={"Bất kỳ"} data={object_status} valueKey="id" labelKey="name"
                 onChange={(value) => handleInputChange('status_', value)} />
             </CCol>
             <CCol>
@@ -205,7 +178,7 @@ const Job = () => {
         keyField='job_id'
         setSelectedRows={setSelectedRows}
         selectedRows={selectedRows}
-        button_classname="fixed-action-btn "
+
       />
       <Pagination
         activePage={paging.active_page}

@@ -14,21 +14,53 @@ export const apiCatalog = baseApi.injectEndpoints({
     getCatalogJoblevel: builder.query({
       query: () => "/api/category/getCategory_Level",
       transformResponse: (response) => response.data, // Lấy chỉ phần "data"
-    }),     
-    // getCatalogExperience: builder.query({ //! chưa có!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    //   query: () => "/api/category/getCategory_Experience",
-    //   transformResponse: (response) => response.data, // Lấy chỉ phần "data"
-    // }),
+    }),
+    getCatalogNation: builder.query({
+      query: () => "/api/category/getCategory_Nation",
+      transformResponse: (response) => response.data, // Lấy chỉ ph
+    }),
     getCatalogcity: builder.query({
       query: () => "/api/category/getCategory_City",
       transformResponse: (response) => response.data, // Lấy chỉ phần "data"
     }),
+    getCatalogDistrict: builder.query({
+      query: () => "/api/category/getCategory_District",
+      transformResponse: (response) => response.data, // Lấy chỉ ph
+    }),
+    getCatalogScale: builder.query({
+      query: () => "/api/category/getCategory_Scale",
+      transformResponse: (response) => response.data, // Lấy chỉ ph
+    }),
+    getCatalogEducation: builder.query({
+      query: () => "/api/category/getCategory_Education",
+      transformResponse: (response) => response.data, // Lấy chỉ ph
+    }),
+    getCatalogLanguage: builder.query({
+      query: () => "/api/category/getCategory_Language",
+      transformResponse: (response) => response.data, // Lấy chỉ ph
+    }),
+    getCatalogBenifit: builder.query({
+      query: () => "/api/category/getCategory_Benifit",
+      transformResponse: (response) => response.data, // Lấy chỉ ph
+    }),
+    getCatalogTag: builder.query({
+      query: () => "/api/category/getCategory_Tags",
+      transformResponse: (response) => response.data, // Lấy chỉ ph
+    }),
+
+
   }),
 });
 
 export const {  useGetCatalogIndustryQuery,
                 useGetCatalogJobfunctionQuery,
                 useGetCatalogJoblevelQuery,
-                // useGetCatalogExperienceQuery,
-                useGetCatalogcityQuery, 
+                useGetCatalogNationQuery,
+                useGetCatalogcityQuery,
+                useGetCatalogDistrictQuery,
+                useGetCatalogScaleQuery,
+                useGetCatalogEducationQuery,
+                useGetCatalogLanguageQuery,
+                useGetCatalogBenifitQuery,
+                useGetCatalogTagQuery,
             } = apiCatalog; // Đảm bảo export đúng tên
